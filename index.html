@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en_US">
+  <head>
+    <meta charset="utf-8">
+    <title>BroadcastChannel Demo</title>
+    <style type="text/css">* { font-family: sans; };</style>
+    <script type="text/javascript">
+    window.addEventListener('DOMContentLoaded',function () {
+      var channels = [];
+      var chindex = 0;
+      var voutput = [];
+      window.nick = "window";
+      voutput.log = function(msg)
+      {
+        document.body.querySelector("#out").value += "\n" + msg;
+      };
+
+      window.setNick = function(nickn)
+      {
+        window.nick = nickn;
+        voutput.log("{System}: Successfully set nickname to " + nickn + ".");
+      };
+
+      window.joinChannel = function(channelName)
+      {
+        try {
+          channels[chindex] = new BroadcastChannel(channelName);
+          channels[chindex].onmessage = event => { voutput.log("{" + event.currentTarget.name + "} " + event.data.toString()); };
+          var sel = document.createElement("OPTION");
+          sel.value = chindex.toString();
+          sel.innerText = channelName;
+          document.body.querySelector("#chls").appendChild(sel.cloneNode(true));
+          document.body.querySelector("#chls2").appendChild(sel.cloneNode(true));
+          sel = undefined;
+          chindex++;
+          voutput.log("{System}: Successfully joined channel " + channelName + ".");
+        } catch(e) { voutput.log("{System}: Error creating/joining channel " + channelName + ": " + e.toString()); };
+      };
+
+      window.leaveChannel = function(channelIndex)
+      {
+        try {
+          window.tempchannelswapname1 = channels[channelIndex].name;
+          channels[channelIndex].close();
+          var chls_lst = document.body.querySelector("#chls").querySelectorAll("*");
+          for (let i = 0; i < chls_lst.length; i++) {
+            if ((chls_lst[i].value).toString() == channelIndex.toString())
+            {
+              chls_lst[i].remove();
+            };
+          };
+          var chls2_lst = document.body.querySelector("#chls2").querySelectorAll("*");
+          for (let i = 0; i < chls2_lst.length; i++) {
+            if ((chls2_lst[i].value).toString() == channelIndex.toString())
+            {
+              chls2_lst[i].remove();
+            };
+          };
+          voutput.log("{System}: Successfully left channel " + window.tempchannelswapname1 + ".");
+          window.tempchannelswapname1 = undefined;
+        } catch(e) { voutput.log("{System}: Error leaving channel " + channels[channelIndex].name + ": " + e.toString()) };
+      };
+
+      window.postMessage = function(message, channelIndex)
+      {
+        try {
+          channels[channelIndex].postMessage("[" + window.nick + "]: " + message);
+          voutput.log("{" + channels[channelIndex].name + "} " + "[" + window.nick + "]: " + message);
+        } catch(e) { voutput.log("{System}: Error posting message to channel " + channels[channelIndex].name + ": " + e.toString()); };
+      };
+      window.joinChannel("all");
+    });
+    </script>
+  </head>
+  <body>
+    <center>
+      <h1>BroadcastChannel Demo</h1>
+      <cite>The Broadcast Channel API allows basic communication between browsing contexts (that is, windows, tabs, frames, or iframes) and workers on the same origin.<br>By creating a BroadcastChannel object, you can receive any messages that are posted to it. You don't have to maintain a reference to the frames or workers you wish to communicate with: they can "subscribe" to a particular channel by constructing their own BroadcastChannel with the same name, and have bi-directional communication between all of them.</cite><br><br><cite>@<a href="https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API">MDN Web Docs</a></cite>
+      <br><br>
+      <h4>Set a nickname for this window</h4>
+      <input type="text" id="nick" placeholder="window" value="window"><button onclick="window.setNick(document.body.querySelector('#nick').value);">Set</button>
+      <br><br>
+      <h4>Create/Join a channel</h4>
+      <input type="text" id="channelname_add" placeholder="Channel name goes here..."><button onclick="window.joinChannel(document.body.querySelector('#channelname_add').value);">Create/Join</button>
+      <br><br>
+      <h4>Leave a channel</h4>
+      <select id="chls2"></select><button onclick="window.leaveChannel(parseInt(document.body.querySelector('#chls2').value))">Leave</button>
+      <br><br>
+      <h4>Post a message</h4>
+      <textarea id="msg_entry" style="width: 50vw; height: 50px;" placeholder="Message goes here..."></textarea><br><select id="chls"></select><button onclick="window.postMessage(document.body.querySelector('#msg_entry').value, parseInt(document.body.querySelector('#chls').value))">Post</button>
+      <br><br>
+      <h4>Output</h4>
+      <textarea id="out" style="width: 90vw; height: 500px;" placeholder="Output will appear here..." readonly></textarea>
+    </center>
+  </body>
+</html>
